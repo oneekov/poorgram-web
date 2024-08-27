@@ -1,19 +1,25 @@
-#FIXME: Нужна куча проверок тут на валидность данных
-
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from tg.auth import send_code, tg_sign_in
+from urllib.parse import urlencode
 # from core.settings import SECRET_KEY
-import datetime
+# import datetime
 
-#TODO: Сделать проверки, чтобы челы не могли перескочить с главной на ввод пароля, например
+#TODO: Добавить возможность выйти из аккаунта
+
+#TODO: Сделать проверки, чтобы челы не могли перескочить с главной на ввод пароля, например (и не было KeyError из-за отсутствия нужных cookie)
+
 #TODO: Сделать перенаправление на chats, если вход выполнен
-
 async def index(request):
     return render(request, "index.html")
 
 async def code(request):
     phone_hash, auth_key = await send_code(request.GET.get('number'))
+
+    if phone_hash == 0: #если ошибка
+        params = {'error': auth_key}
+
+        return redirect("/error/?" + urlencode(params))
 
     response = render(request, "code.html")
     response.set_cookie("phone_hash", phone_hash)
@@ -29,10 +35,16 @@ async def twofactor(request):
         phone_hash=request.COOKIES['phone_hash']
     )
 
-    if result: 
-        response = redirect("chats/")
+    if type(result) == str:
+        params = {'error': result}
+
+        response = redirect("/error/?" + urlencode(params))
+
+    elif result: 
+        response = redirect("/chats/")
         response.delete_cookie("number")
         response.delete_cookie("phone_hash")
+    
     else: 
         response = render(request, "2fa.html")
         response.set_cookie("code", request.GET.get('code'))
@@ -40,7 +52,7 @@ async def twofactor(request):
     return response
 
 async def sign_in(request):
-    await tg_sign_in(
+    result = await tg_sign_in(
         request.COOKIES['auth_key'],
         phone=request.COOKIES['number'],
         code=request.COOKIES['code'],
@@ -48,9 +60,14 @@ async def sign_in(request):
         password=request.GET.get('password')
     )
 
-    response = redirect("/chats/")
-    response.delete_cookie("number")
-    response.delete_cookie("phone_hash")
-    response.delete_cookie("code")
+    if type(result) == str:
+        params = {'error': result}
+
+        response = redirect("/error/?" + urlencode(params))
+    else:
+        response = redirect("/chats/")
+        response.delete_cookie("number")
+        response.delete_cookie("phone_hash")
+        response.delete_cookie("code")
 
     return response

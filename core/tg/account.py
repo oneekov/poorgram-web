@@ -5,7 +5,7 @@ from telethon.errors import *
 from .config import app_hash, app_id
 
 #FIXME: Убрать это, оно было нужно только для теста
-async def getUsername(session): #Temporary. Will be removed after tests
+async def getUsername(session):
     client = TelegramClient(StringSession(session), app_id, app_hash)
     await client.connect()
 
