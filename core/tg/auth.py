@@ -82,3 +82,9 @@ async def tg_sign_in(session, phone=None, code=None, phone_hash=None, password=N
     except Exception as e: #что-либо другое
         await client.disconnect()
         return str(e)
+
+async def tg_log_out(session):
+    client = TelegramClient(StringSession(session), app_id, app_hash)
+    await client.connect()
+    await client.log_out()
+    await client.disconnect()

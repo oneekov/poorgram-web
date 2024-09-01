@@ -3,5 +3,5 @@ import os
 
 load_dotenv()
 
-app_id = os.getenv("APPID")
-app_hash = os.getenv("APPHASH")
+app_id = os.getenv("APIID")
+app_hash = os.getenv("APIHASH")
