@@ -3,6 +3,23 @@
         <title>PoorGram Web - чаты</title>
     </head>
     <body>
-        <h3>Hello, @{{username}}</h3>
+        <a href="/auth/logout">Выйти из сессии</a><br>
+        <a href="/account/">Настройки аккаунта</a><br>
+        {% if archive %}
+        <a href="/chats/">Открыть чаты</a><br>
+        {% else %}
+        <a href="/archive/">Открыть архив</a><br>
+        {% endif %}
+        <a href="">Обновить страницу</a>
+        {% for dialog in dialogs %}
+        <hr>
+        <div style="line-height: 0.3">
+            
+            <h2><small>{{ dialog.0 }}</small> | {{ dialog.1 }}</h2>
+            <p style="line-height: 1">{{ dialog.2 }}</p>
+            <a href="/chat/{{ dialog.3 }}"><b>Перейти к чату</b></a>
+        </div>
+        {% endfor %}
+        <hr>
     </body>
 </html>

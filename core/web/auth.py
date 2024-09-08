@@ -1,11 +1,10 @@
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from tg.auth import send_code, tg_sign_in, tg_log_out
-from urllib.parse import urlencode
+from .utils import errorRedirect
 # from core.settings import SECRET_KEY
 # import datetime
 
-#TODO: Добавить возможность выйти из аккаунта
 
 async def index(request):
     if 'auth_key' in request.COOKIES.keys(): #Если вход уже выполнен
@@ -17,9 +16,7 @@ async def code(request):
     phone_hash, auth_key = await send_code(request.GET.get('number', "+00000000007"))
 
     if phone_hash == 0: #если ошибка
-        params = {'error': auth_key}
-
-        return redirect("/error/?" + urlencode(params))
+        return await errorRedirect(auth_key)
 
     response = render(request, "code.html")
     response.set_cookie("phone_hash", phone_hash)
@@ -28,10 +25,8 @@ async def code(request):
     return response
 
 async def twofactor(request):
-    if any(cookie in request.COOKIES.keys() for cookie in ('auth_key', 'number', 'phone_hash')): #Если человек "перепрыгнул страницу" и один из куки отсутствует
-        params = {'error': "Выйдите из сессии и попробуйте снова"}
-
-        return redirect("/error/?" + urlencode(params))
+    if not any(cookie in request.COOKIES.keys() for cookie in ('auth_key', 'number', 'phone_hash')): #Если человек "перепрыгнул страницу" и один из куки отсутствует
+        return await errorRedirect("Выйдите из сессии и попробуйте снова")
 
     result = await tg_sign_in(
         request.COOKIES['auth_key'],
@@ -41,9 +36,7 @@ async def twofactor(request):
     )
 
     if type(result) == str:
-        params = {'error': result}
-
-        response = redirect("/error/?" + urlencode(params))
+        return await errorRedirect(result)
 
     elif result: 
         response = redirect("/chats/")
@@ -57,10 +50,8 @@ async def twofactor(request):
     return response
 
 async def sign_in(request):
-    if any(cookie in request.COOKIES for cookie in ('auth_key', 'number', 'phone_hash', 'code')): #Если человек "перепрыгнул страницу" и один из куки отсутствует
-        params = {'error': "Выйдите из сессии и попробуйте снова"}
-
-        return redirect("/error/?" + urlencode(params))
+    if not any(cookie in request.COOKIES for cookie in ('auth_key', 'number', 'phone_hash', 'code')): #Если человек "перепрыгнул страницу" и один из куки отсутствует
+        return await errorRedirect("Выйдите из сессии и попробуйте снова")
     
     result = await tg_sign_in(
         request.COOKIES['auth_key'],
@@ -71,9 +62,7 @@ async def sign_in(request):
     )
 
     if type(result) == str:
-        params = {'error': result}
-
-        response = redirect("/error/?" + urlencode(params))
+        return await errorRedirect(result)
     else:
         response = redirect("/chats/")
         response.delete_cookie("number")
@@ -86,7 +75,7 @@ async def log_out(request):
     response = redirect('/')
 
     if 'auth_key' in request.COOKIES.keys():
-        await tg_log_out()
+        await tg_log_out(request.COOKIES['auth_key'])
         response.delete_cookie('auth_key')
 
     return response
