@@ -39,7 +39,7 @@ async def default_chats():
     if type(chats) == str:
         return await error_redirect(chats)
 
-    response = await render_template("chats.html", context={"dialogs": chats, "archive": False})
+    response = await render_template("chats.html", dialogs=chats, archive=False)
     return response
 
 @chats.route('/archive')
@@ -49,5 +49,5 @@ async def archive_chats():
     if type(chats) == str:
         return await error_redirect(chats)
 
-    response = await render_template("chats.html", context={"dialogs": chats, "archive": True})
+    response = await render_template("chats.html", dialogs=chats, archive=True)
     return response
